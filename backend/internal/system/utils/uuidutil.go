@@ -16,12 +16,31 @@
  * under the License.
  */
 
-// Package utils provides utility functions for session management.
 package utils
 
-import "github.com/asgardeo/thunder/internal/system/utils"
+import (
+	"fmt"
+	"io"
+	"crypto/rand"
+)
 
-// GenerateNewSessionDataKey generates and returns a new session data key.
-func GenerateNewSessionDataKey() string {
-	return utils.GenerateUUID()
+// GenerateUUID returns a UUID string in lowercase hexadecimal, following the canonical textual representation
+// as specified in RFC 9562.
+func GenerateUUID() string {
+	var uuid [16]byte
+	_, err := io.ReadFull(rand.Reader, uuid[:])
+	if err != nil {
+		panic(fmt.Errorf("failed to generate random bytes: %w", err))
+	}
+
+	uuid[6] = (uuid[6] & 0x0f) | 0x40 // Version 4
+	uuid[8] = (uuid[8] & 0x3f) | 0x80 // Variant is 10
+
+	return fmt.Sprintf("%x-%x-%x-%x-%x",
+		uuid[0:4],
+		uuid[4:6],
+		uuid[6:8],
+		uuid[8:10],
+		uuid[10:],
+	)
 }

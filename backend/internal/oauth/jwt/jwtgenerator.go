@@ -35,7 +35,7 @@ import (
 
 	"github.com/asgardeo/thunder/internal/system/config"
 
-	"github.com/google/uuid"
+	"github.com/asgardeo/thunder/internal/system/utils"
 )
 
 var privateKey *rsa.PrivateKey
@@ -118,7 +118,7 @@ func GenerateJWT(sub, aud string) (string, error) {
 		"exp": expirationTime,
 		"iat": time.Now().Unix(),
 		"nbf": time.Now().Unix(),
-		"jti": uuid.New().String(),
+		"jti": utils.GenerateUUID(),
 	}
 	payloadJSON, err := json.Marshal(payload)
 	if err != nil {

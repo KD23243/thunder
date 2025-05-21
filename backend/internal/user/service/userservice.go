@@ -22,7 +22,7 @@ package service
 import (
 	"errors"
 
-	"github.com/google/uuid"
+	"github.com/asgardeo/thunder/internal/system/utils"
 
 	"github.com/asgardeo/thunder/internal/system/log"
 	"github.com/asgardeo/thunder/internal/user/model"
@@ -50,7 +50,7 @@ func GetUserService() UserServiceInterface {
 func (as *UserService) CreateUser(user *model.User) (*model.User, error) {
 	logger := log.GetLogger().With(log.String(log.LoggerKeyComponentName, "UserService"))
 
-	user.ID = uuid.New().String()
+	user.ID = utils.GenerateUUID()
 
 	// Create the user in the database.
 	err := store.CreateUser(*user)
