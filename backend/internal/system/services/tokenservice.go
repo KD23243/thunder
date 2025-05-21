@@ -22,6 +22,7 @@ import (
 	"net/http"
 
 	"github.com/asgardeo/thunder/internal/oauth/oauth2/token"
+	"github.com/asgardeo/thunder/internal/system/server"
 )
 
 // TokenService defines the service for handling OAuth2 token requests.
@@ -41,5 +42,12 @@ func NewTokenService(mux *http.ServeMux) *TokenService {
 
 // RegisterRoutes registers the routes for the TokenService.
 func (s *TokenService) RegisterRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("POST /oauth2/token", s.tokenHandler.HandleTokenRequest)
+	opts := server.RequestWrapOptions{
+		Cors: &server.Cors{
+			AllowedMethods:   "POST",
+			AllowedHeaders:   "Content-Type, Authorization",
+			AllowCredentials: true,
+		},
+	}
+	server.WrapHandleFunction(mux, "POST /oauth2/token", &opts, s.tokenHandler.HandleTokenRequest)
 }

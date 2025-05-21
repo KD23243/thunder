@@ -22,6 +22,7 @@ import (
 	"net/http"
 
 	"github.com/asgardeo/thunder/internal/application/handler"
+	"github.com/asgardeo/thunder/internal/system/server"
 )
 
 // ApplicationService defines the service for handling application-related requests.
@@ -40,10 +41,34 @@ func NewApplicationService(mux *http.ServeMux) *ApplicationService {
 }
 
 // RegisterRoutes registers the routes for the ApplicationService.
+//
+//nolint:dupl // Ignoring false positive duplicate code
 func (s *ApplicationService) RegisterRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("POST /applications", s.applicationHandler.HandleApplicationPostRequest)
-	mux.HandleFunc("GET /applications", s.applicationHandler.HandleApplicationListRequest)
-	mux.HandleFunc("GET /applications/", s.applicationHandler.HandleApplicationGetRequest)
-	mux.HandleFunc("PUT /applications/", s.applicationHandler.HandleApplicationPutRequest)
-	mux.HandleFunc("DELETE /applications/", s.applicationHandler.HandleApplicationDeleteRequest)
+	opts1 := server.RequestWrapOptions{
+		Cors: &server.Cors{
+			AllowedMethods:   "GET, POST",
+			AllowedHeaders:   "Content-Type, Authorization",
+			AllowCredentials: true,
+		},
+	}
+	server.WrapHandleFunction(mux, "POST /applications", &opts1, s.applicationHandler.HandleApplicationPostRequest)
+	server.WrapHandleFunction(mux, "GET /applications", &opts1, s.applicationHandler.HandleApplicationListRequest)
+	server.WrapHandleFunction(mux, "OPTIONS /applications", &opts1, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	})
+
+	opts2 := server.RequestWrapOptions{
+		Cors: &server.Cors{
+			AllowedMethods:   "GET, PUT, DELETE",
+			AllowedHeaders:   "Content-Type, Authorization",
+			AllowCredentials: true,
+		},
+	}
+	server.WrapHandleFunction(mux, "GET /applications/", &opts2, s.applicationHandler.HandleApplicationGetRequest)
+	server.WrapHandleFunction(mux, "PUT /applications/", &opts2, s.applicationHandler.HandleApplicationPutRequest)
+	server.WrapHandleFunction(mux, "DELETE /applications/", &opts2,
+		s.applicationHandler.HandleApplicationDeleteRequest)
+	server.WrapHandleFunction(mux, "OPTIONS /applications/", &opts2, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	})
 }

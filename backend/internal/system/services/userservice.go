@@ -21,6 +21,7 @@ package services
 import (
 	"net/http"
 
+	"github.com/asgardeo/thunder/internal/system/server"
 	"github.com/asgardeo/thunder/internal/user/handler"
 )
 
@@ -40,10 +41,33 @@ func NewUserService(mux *http.ServeMux) *UserService {
 }
 
 // RegisterRoutes registers the routes for user management operations.
+//
+//nolint:dupl // Ignoring false positive duplicate code
 func (s *UserService) RegisterRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("POST /users", s.userHandler.HandleUserPostRequest)
-	mux.HandleFunc("GET /users", s.userHandler.HandleUserListRequest)
-	mux.HandleFunc("GET /users/", s.userHandler.HandleUserGetRequest)
-	mux.HandleFunc("PUT /users/", s.userHandler.HandleUserPutRequest)
-	mux.HandleFunc("DELETE /users/", s.userHandler.HandleUserDeleteRequest)
+	opts1 := server.RequestWrapOptions{
+		Cors: &server.Cors{
+			AllowedMethods:   "GET, POST",
+			AllowedHeaders:   "Content-Type, Authorization",
+			AllowCredentials: true,
+		},
+	}
+	server.WrapHandleFunction(mux, "POST /users", &opts1, s.userHandler.HandleUserPostRequest)
+	server.WrapHandleFunction(mux, "GET /users", &opts1, s.userHandler.HandleUserListRequest)
+	server.WrapHandleFunction(mux, "OPTIONS /users", &opts1, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	})
+
+	opts2 := server.RequestWrapOptions{
+		Cors: &server.Cors{
+			AllowedMethods:   "GET, PUT, DELETE",
+			AllowedHeaders:   "Content-Type, Authorization",
+			AllowCredentials: true,
+		},
+	}
+	server.WrapHandleFunction(mux, "GET /users/", &opts2, s.userHandler.HandleUserGetRequest)
+	server.WrapHandleFunction(mux, "PUT /users/", &opts2, s.userHandler.HandleUserPutRequest)
+	server.WrapHandleFunction(mux, "DELETE /users/", &opts2, s.userHandler.HandleUserDeleteRequest)
+	server.WrapHandleFunction(mux, "OPTIONS /users/", &opts2, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	})
 }

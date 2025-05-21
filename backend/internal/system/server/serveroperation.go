@@ -20,13 +20,16 @@
 package server
 
 import (
+	"errors"
+	"net/http"
+
 	dbprovider "github.com/asgardeo/thunder/internal/system/database/provider"
 	"github.com/asgardeo/thunder/internal/system/log"
 	"github.com/asgardeo/thunder/internal/system/utils"
 )
 
-// GetAllowedOrigins retrieves the allowed origins from the database.
-func GetAllowedOrigins() ([]string, error) {
+// getAllowedOrigins retrieves the list of allowed origins from the database.
+func getAllowedOrigins() ([]string, error) {
 	logger := log.GetLogger()
 
 	dbClient, err := dbprovider.NewDBProvider().GetDBClient("identity")
@@ -59,4 +62,53 @@ func GetAllowedOrigins() ([]string, error) {
 	}
 
 	return utils.ParseStringArray(allowedOrigins), nil
+}
+
+// addAllowedOriginHeaders sets the CORS headers for the response based on the configured allowed origins.
+func addAllowedOriginHeaders(w http.ResponseWriter, r *http.Request, options *RequestWrapOptions) error {
+	allowedOrigins, err := getAllowedOrigins()
+	if err != nil {
+		return errors.New("failed to get allowed origins")
+	}
+
+	requestOrigin := r.Header.Get("Origin")
+	if requestOrigin == "" {
+		// Get the origin from the request URL if not present in the header.
+		requestOrigin = r.URL.Scheme + "://" + r.URL.Host
+	}
+
+	// Set the CORS headers if allowed origins are configured.
+	allowedOrigin := utils.GetAllowedOrigin(allowedOrigins, requestOrigin)
+	if allowedOrigin != "" {
+		w.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
+
+		if options.Cors.AllowedMethods != "" {
+			w.Header().Set("Access-Control-Allow-Methods", options.Cors.AllowedMethods)
+		}
+		if options.Cors.AllowedHeaders != "" {
+			w.Header().Set("Access-Control-Allow-Headers", options.Cors.AllowedHeaders)
+		}
+		if options.Cors.AllowCredentials {
+			w.Header().Set("Access-Control-Allow-Credentials", "true")
+		}
+	}
+
+	return nil
+}
+
+// WrapHandleFunction wraps the provided handler function with pre-request processing and registers it with the mux.
+func WrapHandleFunction(mux *http.ServeMux, pattern string, options *RequestWrapOptions,
+	handlerFunc http.HandlerFunc) {
+	// Register the handler function with the mux
+	mux.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
+		logger := log.GetLogger()
+
+		// Add the CORS headers
+		if err := addAllowedOriginHeaders(w, r, options); err != nil {
+			logger.Error("Failed to add allowed origin to the response", log.Error(err))
+		}
+
+		// Return the handler function
+		handlerFunc(w, r)
+	})
 }

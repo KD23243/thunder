@@ -22,6 +22,7 @@ import (
 	"net/http"
 
 	"github.com/asgardeo/thunder/internal/oauth/oauth2/authz"
+	"github.com/asgardeo/thunder/internal/system/server"
 )
 
 // AuthorizationService defines the service for handling OAuth2 authorization requests.
@@ -41,5 +42,5 @@ func NewAuthorizationService(mux *http.ServeMux) *AuthorizationService {
 
 // RegisterRoutes registers the routes for the AuthorizationService.
 func (s *AuthorizationService) RegisterRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("GET /oauth2/authorize", s.authHandler.HandleAuthorizeRequest)
+	server.WrapHandleFunction(mux, "GET /oauth2/authorize", nil, s.authHandler.HandleAuthorizeRequest)
 }

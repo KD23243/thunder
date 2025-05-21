@@ -22,6 +22,7 @@ import (
 	"net/http"
 
 	"github.com/asgardeo/thunder/internal/authn"
+	"github.com/asgardeo/thunder/internal/system/server"
 )
 
 // AuthenticationService defines the service for handling authentication requests.
@@ -40,11 +41,16 @@ func NewAuthenticationService(mux *http.ServeMux) *AuthenticationService {
 
 // RegisterRoutes registers the routes for the AuthenticationService.
 func (s *AuthenticationService) RegisterRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("/flow/authn", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodPost || r.Method == http.MethodGet {
-			s.authHandler.HandleAuthenticationRequest(w, r)
-		} else {
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+	opts := server.RequestWrapOptions{
+		Cors: &server.Cors{
+			AllowedMethods:   "POST, GET",
+			AllowedHeaders:   "Content-Type, Authorization",
+			AllowCredentials: true,
+		},
+	}
+	server.WrapHandleFunction(mux, "POST /flow/authn", &opts, s.authHandler.HandleAuthenticationRequest)
+	server.WrapHandleFunction(mux, "GET /flow/authn", &opts, s.authHandler.HandleAuthenticationRequest)
+	server.WrapHandleFunction(mux, "OPTIONS /flow/authn", &opts, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
 	})
 }

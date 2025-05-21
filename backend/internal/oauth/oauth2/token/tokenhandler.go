@@ -23,7 +23,6 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/asgardeo/thunder/internal/system/server"
 	"github.com/asgardeo/thunder/internal/system/utils"
 
 	appprovider "github.com/asgardeo/thunder/internal/application/provider"
@@ -177,23 +176,6 @@ func (th *TokenHandler) HandleTokenRequest(w http.ResponseWriter, r *http.Reques
 	// Must include the following headers when sensitive data is returned.
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("Pragma", "no-cache")
-
-	// Retrieve allowed origins from the server configuration.
-	allowedOrigins, err := server.GetAllowedOrigins()
-	if err != nil {
-		logger.Error("Failed to get allowed origins", log.Error(err))
-		http.Error(w, "Something went wrong", http.StatusInternalServerError)
-		return
-	}
-
-	// Set the CORS headers if allowed origins are configured.
-	allowedOrigin := utils.GetAllowedOrigin(allowedOrigins, tokenRequest.RedirectURI)
-	if allowedOrigin != "" {
-		w.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
-		w.Header().Set("Access-Control-Allow-Credentials", "true")
-		w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
-		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
-	}
 
 	// Write the token response.
 	w.WriteHeader(http.StatusOK)
