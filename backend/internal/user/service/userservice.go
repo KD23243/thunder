@@ -23,7 +23,6 @@ import (
 	"errors"
 
 	"github.com/asgardeo/thunder/internal/system/utils"
-
 	"github.com/asgardeo/thunder/internal/system/log"
 	"github.com/asgardeo/thunder/internal/user/model"
 	"github.com/asgardeo/thunder/internal/user/store"

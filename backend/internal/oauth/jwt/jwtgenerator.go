@@ -34,7 +34,6 @@ import (
 	"time"
 
 	"github.com/asgardeo/thunder/internal/system/config"
-
 	"github.com/asgardeo/thunder/internal/system/utils"
 )
 
